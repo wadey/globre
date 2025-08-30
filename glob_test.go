@@ -24,6 +24,8 @@ func TestConvert(t *testing.T) {
 		{"foo{,{-a,-b}}.baz.com", `^foo(|(-a|-b))\.baz\.com$`,
 			[]string{"foo.baz.com", "foo-a.baz.com", "foo-b.baz.com"},
 			[]string{"foo-a-b.baz.com"}},
+		{"foo[{}]", `^foo[\{\}]$`,
+			[]string{"foo{}"}, []string{"foo()"}},
 	}
 	for _, tt := range convertTests {
 		t.Run(tt.in, func(t *testing.T) {
@@ -50,6 +52,27 @@ func TestConvert(t *testing.T) {
 				if re.MatchString(n) {
 					t.Fatalf("do not want match, but did: %v", n)
 				}
+			}
+		})
+	}
+}
+
+func TestConvertErr(t *testing.T) {
+	var convertTests = []struct {
+		in  string
+		err string
+	}{
+		{"[.foo.com", "error parsing regexp: missing closing ]: `[\\.foo\\.com$`"},
+		{"{).foo.com", "error parsing regexp: missing closing ): `^(\\)\\.foo\\.com$`"},
+	}
+	for _, tt := range convertTests {
+		t.Run(tt.in, func(t *testing.T) {
+			_, err := Compile(tt.in)
+			if err == nil {
+				t.Fatalf("did not error: %#q", tt.in)
+			}
+			if tt.err != err.Error() {
+				t.Fatalf("got %s, want %s", err, tt.err)
 			}
 		})
 	}

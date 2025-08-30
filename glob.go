@@ -38,6 +38,7 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 	var sb strings.Builder
 
 	var inGroup int
+	var inSet bool
 
 	var last rune
 	var wildStarted bool
