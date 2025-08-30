@@ -38,11 +38,10 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 	var sb strings.Builder
 
 	var inGroup int
-	var inSet bool
 
 	var last rune
 	var wildStarted bool
-	var backslashStarted bool
+	var backslash bool
 
 	sb.WriteString("^")
 
@@ -53,10 +52,11 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 			sb.WriteString("]*")
 			wildStarted = false
 		}
-		if backslashStarted {
+		if backslash {
 			sb.WriteRune(c)
-			backslashStarted = false
-			last = c
+			backslash = false
+			// This char was escaped, so don't consider it for lookback
+			last = 0
 			continue
 		}
 
@@ -92,18 +92,9 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 			sb.WriteRune(')')
 
 		case '[':
-			if inSet {
-				return "", fmt.Errorf("unexpected: [")
-			}
-			inSet = true
 			sb.WriteRune(c)
 
 		case ']':
-			if !inSet {
-				return "", fmt.Errorf("unexpected: ]")
-			}
-
-			inSet = false
 			sb.WriteRune(c)
 
 		case '!':
@@ -121,7 +112,7 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 			}
 
 		case '\\':
-			backslashStarted = true
+			backslash = true
 			sb.WriteRune(c)
 
 		default:
