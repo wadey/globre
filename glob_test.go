@@ -25,7 +25,25 @@ func TestConvert(t *testing.T) {
 			[]string{"foo.baz.com", "foo-a.baz.com", "foo-b.baz.com"},
 			[]string{"foo-a-b.baz.com"}},
 		{"foo[{}]", `^foo[\{\}]$`,
-			[]string{"foo{}"}, []string{"foo()"}},
+			[]string{"foo{"}, []string{"foo("}},
+		{"foo[*]", `^foo[\*]$`,
+			[]string{"foo*"}, []string{"foo("}},
+		// https://github.com/gobwas/glob/issues/62
+		{"{,a}{,a}a", `^(|a)(|a)a$`,
+			[]string{"a", "aa", "aaa"},
+			[]string{"aaaa", ""}},
+		// https://github.com/gobwas/glob/issues/66
+		{"{**/daxing,daxing}/**/*dev*.yaml", `^(.*.*/daxing|daxing)/.*.*/.*dev.*\.yaml$`,
+			[]string{"playground/daxing/generated/dev.yaml"},
+			[]string{}},
+		// https://github.com/gobwas/glob/issues/61
+		{"start*art", `^start.*art$`,
+			[]string{"start-art"},
+			[]string{"start"}},
+		// https://github.com/gobwas/glob/issues/50
+		{"{google.*,*yandex:*.exe:page.*}", `^(google\..*|.*yandex:.*\.exe:page\..*)$`,
+			[]string{"yandex:service.exe:page.12345"},
+			[]string{}},
 	}
 	for _, tt := range convertTests {
 		t.Run(tt.in, func(t *testing.T) {
@@ -101,6 +119,10 @@ func TestConvertSeparators(t *testing.T) {
 		{"/**", "/", `^/.*$`,
 			[]string{"/foo/bar/bar/baz"},
 			[]string{""}},
+		// https://github.com/gobwas/glob/issues/66
+		{"{**/daxing,daxing}/**/*dev*.yaml", "/", `^(.*/daxing|daxing)/.*/[^/]*dev[^/]*\.yaml$`,
+			[]string{"playground/daxing/generated/dev.yaml"},
+			[]string{}},
 	}
 	for _, tt := range convertTests {
 		t.Run(tt.in, func(t *testing.T) {

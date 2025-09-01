@@ -60,6 +60,23 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 			last = 0
 			continue
 		}
+		if inSet {
+			switch c {
+			case '!':
+				sb.WriteRune('^')
+			case ']':
+				sb.WriteRune(c)
+				inSet = false
+			case '\\':
+				backslash = true
+				sb.WriteRune(c)
+			default:
+				sb.WriteString(regexp.QuoteMeta(string(c)))
+			}
+
+			last = c
+			continue
+		}
 
 		switch c {
 		case '*':
@@ -93,6 +110,7 @@ func ConvertSeparators(glob string, separators string) (string, error) {
 			sb.WriteRune(')')
 
 		case '[':
+			inSet = true
 			sb.WriteRune(c)
 
 		case ']':
